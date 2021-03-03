@@ -17,7 +17,12 @@ pub(crate) fn struct_def(s: &ItemStruct) -> Result<DerivedTS> {
     type_def(&name, &rename_all, &s.fields, s.generics.to_token_stream())
 }
 
-fn type_def(name: &str, rename_all: &Option<Inflection>, fields: &Fields, generics: TokenStream) -> Result<DerivedTS> {
+fn type_def(
+    name: &str,
+    rename_all: &Option<Inflection>,
+    fields: &Fields,
+    generics: TokenStream,
+) -> Result<DerivedTS> {
     match fields {
         Fields::Named(named) => named::named(name, rename_all, &named, generics),
         Fields::Unnamed(unnamed) if unnamed.unnamed.len() == 1 => {
@@ -38,7 +43,12 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
 
     let mut formatted_variants = vec![];
     for variant in &s.variants {
-        format_variant(&mut formatted_variants, &enum_attr, &variant, s.generics.to_token_stream())?;
+        format_variant(
+            &mut formatted_variants,
+            &enum_attr,
+            &variant,
+            s.generics.to_token_stream(),
+        )?;
     }
 
     Ok(DerivedTS {
@@ -47,7 +57,7 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
         inline_flattened: None,
         dependencies: quote!((vec![])),
         name,
-        generics: s.generics.to_token_stream()
+        generics: s.generics.to_token_stream(),
     })
 }
 
@@ -55,7 +65,7 @@ fn format_variant(
     formatted_variants: &mut Vec<TokenStream>,
     enum_attr: &EnumAttr,
     variant: &Variant,
-    generics: TokenStream
+    generics: TokenStream,
 ) -> Result<()> {
     let FieldAttr {
         type_override,

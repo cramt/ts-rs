@@ -1,12 +1,12 @@
 use std::convert::TryFrom;
 
-use syn::{Attribute, Type};
-use syn::{Error, Result};
+use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use std::ops::Deref;
+use syn::{Attribute, Type};
+use syn::{Error, Result};
 
 macro_rules! syn_err {
     ($l:literal $(, $a:expr)*) => {
@@ -142,9 +142,13 @@ mod warning {
     }
 }
 
-static LIFETIME_REGEX: Lazy<Regex> = Lazy::new(||Regex::new(r"'[^\s]+").unwrap());
+static LIFETIME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"'[^\s,>]+").unwrap());
 
 pub fn convert_lifetime_to_static(ty: &Type) -> TokenStream {
     let str = ty.to_token_stream().to_string();
-    LIFETIME_REGEX.replace(str.as_str(), "'static").deref().parse().unwrap()
+    LIFETIME_REGEX
+        .replace(str.as_str(), "'static")
+        .deref()
+        .parse()
+        .unwrap()
 }

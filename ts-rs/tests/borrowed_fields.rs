@@ -8,7 +8,6 @@ struct BorrowedValues<'a, 'b> {
     b: &'b str,
 }
 
-
 #[test]
 fn test() {
     assert_eq!(

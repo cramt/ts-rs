@@ -24,7 +24,8 @@ impl DerivedTS {
     fn into_impl(self, rust_ty: Ident) -> TokenStream {
         let DerivedTS {
             name,
-            generics, inline,
+            generics,
+            inline,
             decl,
             inline_flattened,
             dependencies,

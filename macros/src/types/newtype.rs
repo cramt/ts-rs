@@ -2,15 +2,15 @@ use quote::quote;
 use syn::{FieldsUnnamed, Result};
 
 use crate::attr::{FieldAttr, Inflection};
+use crate::utils::convert_lifetime_to_static;
 use crate::DerivedTS;
 use proc_macro2::TokenStream;
-use crate::utils::convert_lifetime_to_static;
 
 pub(crate) fn newtype(
     name: &str,
     rename_all: &Option<Inflection>,
     fields: &FieldsUnnamed,
-    generics: TokenStream
+    generics: TokenStream,
 ) -> Result<DerivedTS> {
     if rename_all.is_some() {
         syn_err!("`rename_all` is not applicable to newtype structs");
@@ -31,8 +31,7 @@ pub(crate) fn newtype(
         _ => {}
     };
 
-    let inner_ty = &inner.ty;
-    let inner_static_ty = convert_lifetime_to_static(inner_ty);
+    let inner_ty = convert_lifetime_to_static(&inner.ty);
     let inline_def = match &type_override {
         Some(o) => quote!(#o),
         None if inline => quote!(<#inner_ty as ts_rs::TS>::inline(0)),
@@ -51,10 +50,10 @@ pub(crate) fn newtype(
             (false, _) => quote! {
                 match <#inner_ty as ts_rs::TS>::transparent() {
                     true => <#inner_ty as ts_rs::TS>::dependencies(),
-                    false => vec![(std::any::TypeId::of::<#inner_static_ty>(), <#inner_ty as ts_rs::TS>::name())]
+                    false => vec![(std::any::TypeId::of::<#inner_ty>(), <#inner_ty as ts_rs::TS>::name())]
                 }
             },
         },
-        generics
+        generics,
     })
 }

@@ -3,14 +3,14 @@ use quote::quote;
 use syn::{Field, FieldsUnnamed, Result};
 
 use crate::attr::{FieldAttr, Inflection};
-use crate::DerivedTS;
 use crate::utils::convert_lifetime_to_static;
+use crate::DerivedTS;
 
 pub(crate) fn tuple(
     name: &str,
     rename_all: &Option<Inflection>,
     fields: &FieldsUnnamed,
-    generics: TokenStream
+    generics: TokenStream,
 ) -> Result<DerivedTS> {
     if rename_all.is_some() {
         syn_err!("`rename_all` is not applicable to tuple structs");
@@ -43,7 +43,7 @@ pub(crate) fn tuple(
             #( #dependencies )*
             dependencies
         },
-        generics
+        generics,
     })
 }
 
@@ -52,8 +52,7 @@ fn format_field(
     dependencies: &mut Vec<TokenStream>,
     field: &Field,
 ) -> Result<()> {
-    let ty = &field.ty;
-    let static_ty = convert_lifetime_to_static(ty);
+    let ty = convert_lifetime_to_static(&field.ty);
     let FieldAttr {
         type_override,
         rename,
@@ -84,7 +83,7 @@ fn format_field(
             if <#ty as ts_rs::TS>::transparent() {
                 dependencies.append(&mut <#ty as ts_rs::TS>::dependencies());
             } else {
-                dependencies.push((std::any::TypeId::of::<#static_ty>(), <#ty as ts_rs::TS>::name()));
+                dependencies.push((std::any::TypeId::of::<#ty>(), <#ty as ts_rs::TS>::name()));
             }
         },
         (true, _) => quote! {

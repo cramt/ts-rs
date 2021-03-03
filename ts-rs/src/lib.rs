@@ -233,7 +233,7 @@ impl_tuples!(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
 impl_proxy!(impl<T: TS> TS for Box<T>);
 impl_proxy!(impl<T: TS> TS for std::sync::Arc<T>);
 impl_proxy!(impl<T: TS> TS for std::rc::Rc<T>);
-impl_proxy!(impl<'a, T: TS + ToOwned> TS for std::borrow::Cow<'a, T>);
+impl_proxy!(impl<'a, T: TS + ToOwned + ?Sized> TS for std::borrow::Cow<'a, T>);
 impl_proxy!(impl<T: TS> TS for std::cell::Cell<T>);
 impl_proxy!(impl<T: TS> TS for std::cell::RefCell<T>);
 
@@ -274,6 +274,24 @@ impl<T: TS + 'static> TS for Vec<T> {
 }
 
 impl<'a> TS for &'a str {
+    fn name() -> String {
+        String::name()
+    }
+
+    fn inline(a: usize) -> String {
+        String::inline(a)
+    }
+
+    fn dependencies() -> Vec<(TypeId, String)> {
+        String::dependencies()
+    }
+
+    fn transparent() -> bool {
+        String::transparent()
+    }
+}
+
+impl<'a> TS for str {
     fn name() -> String {
         String::name()
     }
