@@ -1,21 +1,21 @@
 //! Generate TypeScript interface/type declarations from rust structs.
 //!
 //! ## why?
-//! When building a web application in rust, data structures have to be shared between backend and frontend.  
+//! When building a web application in rust, data structures have to be shared between backend and frontend.
 //! Using this library, you can easily generate TypeScript bindings to your rust structs & enums, so that you can keep your
 //! types in one place.
 //!
 //! ts-rs might also come in handy when working with webassembly.
 //!
 //! ## how?
-//! ts-rs exposes a single trait, `TS`.  
+//! ts-rs exposes a single trait, `TS`.
 //! Using a derive macro, you can implement this trait for
-//! your types.  
+//! your types.
 //! Then, you can use this trait to obtain the TypeScript bindings.
 //! We recommend doing this in your tests. [see the example](https://github.com/Aleph-Alpha/ts-rs/blob/main/example/src/lib.rs)
 //!
 //! ## serde compatibility layer
-//! With the `serde-compat` feature enabled, ts-rs tries parsing serde attributes.  
+//! With the `serde-compat` feature enabled, ts-rs tries parsing serde attributes.
 //! Please note that not all serde attributes are supported yet.
 
 use std::fs::OpenOptions;
@@ -28,8 +28,8 @@ pub use ts_rs_macros::TS;
 #[doc(hidden)]
 pub mod export;
 
-/// A type which can be represented in TypeScript.  
-/// Most of the time, you'd want to derive this trait instead of implementing it manually.  
+/// A type which can be represented in TypeScript.
+/// Most of the time, you'd want to derive this trait instead of implementing it manually.
 /// ts-rs comes with implementations for all numeric types, `String`, `Vec`, `Option` and tuples.
 ///
 /// ## get started
@@ -58,48 +58,48 @@ pub mod export;
 ///
 /// ### struct attributes
 ///
-/// - `#[ts(rename = "..")]`:  
-///   Set the name of the generated interface  
+/// - `#[ts(rename = "..")]`:
+///   Set the name of the generated interface
 ///
-/// - `#[ts(rename_all = "..")]`:  
-///   Rename all fields of this struct.  
+/// - `#[ts(rename_all = "..")]`:
+///   Rename all fields of this struct.
 ///   Valid values are `lowercase`, `UPPERCASE`, `camelCase`, `snake_case`, `PascalCase`, `SCREAMING_SNAKE_CASE`
-///   
+///
 /// ### struct field attributes
 ///
-/// - `#[ts(type = "..")]`:  
-///   Overrides the type used in TypeScript  
+/// - `#[ts(type = "..")]`:
+///   Overrides the type used in TypeScript
 ///
-/// - `#[ts(rename = "..")]`:  
-///   Renames this field  
+/// - `#[ts(rename = "..")]`:
+///   Renames this field
 ///
-/// - `#[ts(inline)]`:  
-///   Inlines the type of this field  
+/// - `#[ts(inline)]`:
+///   Inlines the type of this field
 ///
-/// - `#[ts(skip)]`:  
-///   Skip this field  
+/// - `#[ts(skip)]`:
+///   Skip this field
 ///
-/// - `#[ts(flatten)]`:  
-///   Flatten this field (only works if the field is a struct)  
-///   
+/// - `#[ts(flatten)]`:
+///   Flatten this field (only works if the field is a struct)
+///
 /// ### enum attributes
 ///
-/// - `#[ts(rename = "..")]`:  
-///   Set the name of the generated type  
+/// - `#[ts(rename = "..")]`:
+///   Set the name of the generated type
 ///
-/// - `#[ts(rename_all = "..")]`:  
-///   Rename all variants of this enum.  
+/// - `#[ts(rename_all = "..")]`:
+///   Rename all variants of this enum.
 ///   Valid values are `lowercase`, `UPPERCASE`, `camelCase`, `snake_case`, `PascalCase`, `SCREAMING_SNAKE_CASE`
-///  
+///
 /// ### enum variant attributes
 ///
-/// - `#[ts(rename = "..")]`:  
-///   Renames this variant  
+/// - `#[ts(rename = "..")]`:
+///   Renames this variant
 ///
-/// - `#[ts(skip)]`:  
-///   Skip this variant  
+/// - `#[ts(skip)]`:
+///   Skip this variant
 
-pub trait TS: 'static {
+pub trait TS {
     /// Declaration of this type, e.g. `interface User { user_id: number, ... }`.
     /// This function will panic if the type has no declaration.
     fn decl() -> String {
@@ -115,22 +115,22 @@ pub trait TS: 'static {
         panic!("{} cannot be inlined", Self::name());
     }
 
-    /// Flatten an type declaration.  
+    /// Flatten an type declaration.
     /// This function will panic if the type cannot be flattened.
     fn inline_flattened(#[allow(unused_variables)] indent: usize) -> String {
         panic!("{} cannot be flattened", Self::name())
     }
 
-    /// All type ids and typescript names of the types this type depends on.  
-    /// This is used for resolving imports when using the `export!` macro.  
+    /// All type ids and typescript names of the types this type depends on.
+    /// This is used for resolving imports when using the `export!` macro.
     fn dependencies() -> Vec<(TypeId, String)>;
 
-    /// `true` if this is a transparent type, e.g tuples or a list.  
+    /// `true` if this is a transparent type, e.g tuples or a list.
     /// This is used for resolving imports when using the `export!` macro.
     fn transparent() -> bool;
 
-    /// Dumps the declaration of this type to a file.  
-    /// If the file does not exist, it will be created.  
+    /// Dumps the declaration of this type to a file.
+    /// If the file does not exist, it will be created.
     /// If it does, the declaration will be appended.
     ///
     /// This function will panicked when called on a type which does not have a declaration.
@@ -170,7 +170,7 @@ macro_rules! impl_primitives {
 
 macro_rules! impl_tuples {
     ( impl $($i:ident),* ) => {
-        impl<$($i: TS),*> TS for ($($i,)*) {
+        impl<$($i: TS + 'static),*> TS for ($($i,)*) {
             fn name() -> String {
                 format!(
                     "[{}]",
@@ -226,18 +226,18 @@ impl_primitives! {
     u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 => "number",
     u128, i128 => "bigint",
     bool => "boolean",
-    String, &'static str => "string",
+    String => "string",
     () => "null"
 }
 impl_tuples!(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
 impl_proxy!(impl<T: TS> TS for Box<T>);
 impl_proxy!(impl<T: TS> TS for std::sync::Arc<T>);
 impl_proxy!(impl<T: TS> TS for std::rc::Rc<T>);
-impl_proxy!(impl<T: TS + ToOwned> TS for std::borrow::Cow<'static, T>);
+impl_proxy!(impl<'a, T: TS + ToOwned> TS for std::borrow::Cow<'a, T>);
 impl_proxy!(impl<T: TS> TS for std::cell::Cell<T>);
 impl_proxy!(impl<T: TS> TS for std::cell::RefCell<T>);
 
-impl<T: TS> TS for Option<T> {
+impl<T: TS + 'static> TS for Option<T> {
     fn name() -> String {
         format!("{} | null", T::name())
     }
@@ -255,7 +255,7 @@ impl<T: TS> TS for Option<T> {
     }
 }
 
-impl<T: TS> TS for Vec<T> {
+impl<T: TS + 'static> TS for Vec<T> {
     fn name() -> String {
         format!("{}[]", T::name())
     }
@@ -270,5 +270,41 @@ impl<T: TS> TS for Vec<T> {
 
     fn transparent() -> bool {
         true
+    }
+}
+
+impl<'a> TS for &'a str {
+    fn name() -> String {
+        String::name()
+    }
+
+    fn inline(a: usize) -> String {
+        String::inline(a)
+    }
+
+    fn dependencies() -> Vec<(TypeId, String)> {
+        String::dependencies()
+    }
+
+    fn transparent() -> bool {
+        String::transparent()
+    }
+}
+
+impl<'a, T: TS> TS for &'a T {
+    fn name() -> String {
+        T::name()
+    }
+
+    fn inline(a: usize) -> String {
+        T::inline(a)
+    }
+
+    fn dependencies() -> Vec<(TypeId, String)> {
+        T::dependencies()
+    }
+
+    fn transparent() -> bool {
+        T::transparent()
     }
 }

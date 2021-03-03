@@ -20,3 +20,5 @@ quote = "1"
 syn = { version = "1", features = ["full", "extra-traits"] }
 Inflector = "0.11"
 termcolor = { version = "1", optional = true }
+regex = "1.4.3"
+once_cell = "1.7.2"

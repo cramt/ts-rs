@@ -4,11 +4,13 @@ use syn::{Field, FieldsNamed, Result};
 
 use crate::attr::{FieldAttr, Inflection};
 use crate::DerivedTS;
+use crate::utils::convert_lifetime_to_static;
 
 pub(crate) fn named(
     name: &str,
     rename_all: &Option<Inflection>,
     fields: &FieldsNamed,
+    generics: TokenStream
 ) -> Result<DerivedTS> {
     let mut formatted_fields = vec![];
     let mut dependencies = vec![];
@@ -34,6 +36,7 @@ pub(crate) fn named(
             #( #dependencies )*
             dependencies
         },
+        generics
     })
 }
 
@@ -57,6 +60,7 @@ fn format_field(
     }
 
     let ty = &field.ty;
+    let static_ty = convert_lifetime_to_static(ty);
 
     if flatten {
         match (&type_override, &rename, inline) {
@@ -78,7 +82,7 @@ fn format_field(
                 if <#ty as ts_rs::TS>::transparent() {
                     dependencies.append(&mut <#ty as ts_rs::TS>::dependencies());
                 } else {
-                    dependencies.push((std::any::TypeId::of::<#ty>(), <#ty as ts_rs::TS>::name()));
+                    dependencies.push((std::any::TypeId::of::<#static_ty>(), <#ty as ts_rs::TS>::name()));
                 }
             },
         });

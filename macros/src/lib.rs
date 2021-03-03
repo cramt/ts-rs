@@ -13,6 +13,7 @@ mod types;
 
 struct DerivedTS {
     name: String,
+    generics: TokenStream,
     inline: TokenStream,
     decl: TokenStream,
     inline_flattened: Option<TokenStream>,
@@ -23,7 +24,7 @@ impl DerivedTS {
     fn into_impl(self, rust_ty: Ident) -> TokenStream {
         let DerivedTS {
             name,
-            inline,
+            generics, inline,
             decl,
             inline_flattened,
             dependencies,
@@ -39,7 +40,7 @@ impl DerivedTS {
             .unwrap_or_else(TokenStream::new);
 
         quote! {
-            impl ts_rs::TS for #rust_ty {
+            impl#generics ts_rs::TS for #rust_ty#generics {
                 fn decl() -> String {
                     #decl
                 }

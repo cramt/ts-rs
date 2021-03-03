@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{Fields, ItemEnum, ItemStruct, Result, Variant};
 
 use crate::attr::{EnumAttr, FieldAttr, Inflection, StructAttr};
@@ -14,17 +14,17 @@ pub(crate) fn struct_def(s: &ItemStruct) -> Result<DerivedTS> {
     let StructAttr { rename_all, rename } = StructAttr::from_attrs(&s.attrs)?;
     let name = rename.unwrap_or_else(|| s.ident.to_string());
 
-    type_def(&name, &rename_all, &s.fields)
+    type_def(&name, &rename_all, &s.fields, s.generics.to_token_stream())
 }
 
-fn type_def(name: &str, rename_all: &Option<Inflection>, fields: &Fields) -> Result<DerivedTS> {
+fn type_def(name: &str, rename_all: &Option<Inflection>, fields: &Fields, generics: TokenStream) -> Result<DerivedTS> {
     match fields {
-        Fields::Named(named) => named::named(name, rename_all, &named),
+        Fields::Named(named) => named::named(name, rename_all, &named, generics),
         Fields::Unnamed(unnamed) if unnamed.unnamed.len() == 1 => {
-            newtype::newtype(name, rename_all, &unnamed)
+            newtype::newtype(name, rename_all, &unnamed, generics)
         }
-        Fields::Unnamed(unnamed) => tuple::tuple(name, rename_all, &unnamed),
-        Fields::Unit => unit::unit(name, rename_all),
+        Fields::Unnamed(unnamed) => tuple::tuple(name, rename_all, &unnamed, generics),
+        Fields::Unit => unit::unit(name, rename_all, generics),
     }
 }
 
@@ -38,7 +38,7 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
 
     let mut formatted_variants = vec![];
     for variant in &s.variants {
-        format_variant(&mut formatted_variants, &enum_attr, &variant)?;
+        format_variant(&mut formatted_variants, &enum_attr, &variant, s.generics.to_token_stream())?;
     }
 
     Ok(DerivedTS {
@@ -47,6 +47,7 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
         inline_flattened: None,
         dependencies: quote!((vec![])),
         name,
+        generics: s.generics.to_token_stream()
     })
 }
 
@@ -54,6 +55,7 @@ fn format_variant(
     formatted_variants: &mut Vec<TokenStream>,
     enum_attr: &EnumAttr,
     variant: &Variant,
+    generics: TokenStream
 ) -> Result<()> {
     let FieldAttr {
         type_override,
@@ -82,7 +84,7 @@ fn format_variant(
         _ => {}
     };
 
-    let inline_type = type_def(&name, &None, &variant.fields)?.inline;
+    let inline_type = type_def(&name, &None, &variant.fields, generics)?.inline;
 
     formatted_variants.push(match &enum_attr.untag {
         true => quote!(#inline_type),
