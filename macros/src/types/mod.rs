@@ -35,13 +35,13 @@ fn type_def(
 
 pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
     let enum_attr: EnumAttr = EnumAttr::from_attrs(&s.attrs)?;
-
     let name = match &enum_attr.rename {
         Some(existing) => existing.clone(),
         None => s.ident.to_string(),
     };
 
     let mut formatted_variants = vec![];
+    let mut dependencies = vec![];
     for variant in &s.variants {
         format_variant(
             &mut formatted_variants,
@@ -49,13 +49,23 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
             &variant,
             s.generics.to_token_stream(),
         )?;
+        for field in variant.fields.iter() {
+            let ty = &field.ty;
+            println!("{:?}", ty.to_token_stream().to_string());
+            dependencies.push(quote!(dependencies.append(&mut <#ty as ts_rs::TS>::dependencies());));
+            dependencies.push(quote!(dependencies.push((std::any::TypeId::of::<#ty>(), <#ty as ts_rs::TS>::name()));));
+        }
     }
 
     Ok(DerivedTS {
         inline: quote!(vec![#(#formatted_variants),*].join(" |\n")),
         decl: quote!(format!("export type {} = {};", #name, Self::inline(0))),
         inline_flattened: None,
-        dependencies: quote!((vec![])),
+        dependencies: quote!{
+            let mut dependencies = vec![];
+            #( #dependencies )*
+            dependencies
+        },
         name,
         generics: s.generics.to_token_stream(),
     })
