@@ -51,7 +51,6 @@ pub(crate) fn r#enum(s: &ItemEnum) -> Result<DerivedTS> {
         )?;
         for field in variant.fields.iter() {
             let ty = &field.ty;
-            println!("{:?}", ty.to_token_stream().to_string());
             dependencies.push(quote!(dependencies.append(&mut <#ty as ts_rs::TS>::dependencies());));
             dependencies.push(quote!(dependencies.push((std::any::TypeId::of::<#ty>(), <#ty as ts_rs::TS>::name()));));
         }
